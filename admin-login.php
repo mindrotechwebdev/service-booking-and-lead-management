@@ -5,12 +5,11 @@ session_start();
 
 require_once __DIR__ . '/backend/config/database.php';
 
-if (isset($_SESSION['user_id'])) {
-    header('Location: user-dashboard.php');
+if (isset($_SESSION['admin_id'])) {
+    header('Location: dashboard.php');
     exit;
 }
 
-$success = (string) ($_GET['success'] ?? '');
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -23,20 +22,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Enter a valid email address.';
     } else {
         try {
-            $stmt = db()->prepare('SELECT id, full_name, email, password_hash FROM users WHERE email = :email LIMIT 1');
+            $stmt = db()->prepare('SELECT id, full_name, email, password_hash, role FROM admins WHERE email = :email LIMIT 1');
             $stmt->execute(['email' => $email]);
-            $user = $stmt->fetch();
+            $admin = $stmt->fetch();
 
-            if ($user && password_verify($password, (string) $user['password_hash'])) {
-                $_SESSION['user_id'] = (int) $user['id'];
-                $_SESSION['user_name'] = (string) $user['full_name'];
-                $_SESSION['user_email'] = (string) $user['email'];
+            if ($admin && password_verify($password, (string) $admin['password_hash'])) {
+                $_SESSION['admin_id'] = (int) $admin['id'];
+                $_SESSION['admin_name'] = (string) $admin['full_name'];
+                $_SESSION['admin_email'] = (string) $admin['email'];
+                $_SESSION['admin_role'] = (string) $admin['role'];
 
-                header('Location: user-dashboard.php');
+                header('Location: dashboard.php');
                 exit;
             }
 
-            $error = 'Invalid user credentials.';
+            $error = 'Invalid admin credentials.';
         } catch (Throwable $e) {
             $error = 'Database not connected. Please start MySQL in XAMPP and verify the existing database connection.';
         }
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>User Login | ServiceBook</title>
+  <title>Admin Login | ServiceBook</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
@@ -56,24 +56,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
   <main class="auth-shell">
     <div class="auth-card">
-      <section class="auth-side auth-user">
-        <span class="eyebrow"><i class="bi bi-person-check"></i> User flow</span>
-        <h1>Login, browse services, and manage bookings.</h1>
-        <p>Customers follow the same path as the system flow chart: login, dashboard access, service selection, booking, payment preference, and confirmation.</p>
+      <section class="auth-side auth-admin">
+        <span class="eyebrow"><i class="bi bi-shield-lock"></i> Admin flow</span>
+        <h1>Control services, bookings, leads, and platform operations.</h1>
+        <p>The admin entry point now reflects the flow chart with access to the dashboard, service management, booking oversight, users, providers, and reports.</p>
         <ul class="auth-points">
-          <li><i class="bi bi-check2-circle"></i><span>Quick access to all service categories.</span></li>
-          <li><i class="bi bi-check2-circle"></i><span>Track recent bookings and statuses from one dashboard.</span></li>
-          <li><i class="bi bi-check2-circle"></i><span>Continue directly into the upgraded booking experience.</span></li>
+          <li><i class="bi bi-check2-circle"></i><span>Secure login for admin-only access.</span></li>
+          <li><i class="bi bi-check2-circle"></i><span>Visibility into booking volume and lead pipeline.</span></li>
+          <li><i class="bi bi-check2-circle"></i><span>One place to manage the service platform.</span></li>
         </ul>
       </section>
 
       <section class="auth-form">
-        <h2>User Login</h2>
-        <p>Sign in to manage bookings, view updates, and book your next service.</p>
+        <h2>Admin Login</h2>
+        <p>Sign in to access the admin operations dashboard.</p>
 
-        <?php if ($success !== ''): ?>
-          <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
-        <?php endif; ?>
         <?php if ($error !== ''): ?>
           <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
         <?php endif; ?>
@@ -87,15 +84,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label class="form-label">Password</label>
             <input type="password" name="password" class="form-control" required />
           </div>
-          <button class="btn-booking" type="submit">Login to Dashboard</button>
+          <button class="btn-booking" type="submit">Login as Admin</button>
         </form>
 
         <div class="info-strip">
-          <span class="info-chip">Demo Email: user@servicebook.local</span>
+          <span class="info-chip">Demo Email: admin@servicebook.local</span>
+          <span class="info-chip">Demo Password: admin123</span>
         </div>
 
         <hr />
-        <a class="btn btn-outline-success w-100 mb-2" href="register.php">Create Account</a>
         <a class="btn btn-link px-0" href="index.php">Back to Home</a>
       </section>
     </div>
